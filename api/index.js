@@ -10,7 +10,8 @@ const config = {
 
 // 2. Gemini AIの設定（モデル名を直接指定して404を回避）
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-3-flash" });
+// モデルの指定方法を「最新のGemini 3」に合わせます
+const model = genAI.getGenerativeModel({ model: "gemini-3-flash" }, { apiVersion: 'v1alpha' });
 
 const client = new Client(config);
 const app = express();
