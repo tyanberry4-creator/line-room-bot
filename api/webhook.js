@@ -12,7 +12,7 @@ const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 const client = new Client(config);
 const app = express();
 
-app.post('/api/webhook', express.json(), async (req, res) => {
+app.post('/', express.json(), async (req, res) => {
   const events = req.body.events;
   if (!events || events.length === 0) return res.status(200).send('OK');
   
