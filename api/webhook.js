@@ -8,10 +8,12 @@ const config = {
 };
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// モデル名を「gemini-1.5-flash」に固定して、確実に動かします
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 const client = new Client(config);
 const app = express();
 
+// Vercelのファイル名が webhook.js なら、ここは '/' でOKです
 app.post('/', express.json(), async (req, res) => {
   const events = req.body.events;
   if (!events || events.length === 0) return res.status(200).send('OK');
@@ -20,7 +22,7 @@ app.post('/', express.json(), async (req, res) => {
     await Promise.all(events.map(handleEvent));
     res.json({ status: 'success' });
   } catch (err) {
-    console.error(err);
+    console.error("Error in webhook:", err);
     res.status(500).end();
   }
 });
@@ -41,9 +43,11 @@ async function handleEvent(event) {
       text: response.text(),
     });
   } catch (error) {
+    console.error("Gemini Error:", error);
+    // エラーが起きた時にLINEに通知が行くようにします
     return client.replyMessage(event.replyToken, {
       type: 'text',
-      text: "AIの準備中です。少し待ってから再度送ってください。",
+      text: "申し訳ありません。AI側でエラーが発生しました。設定（APIキーやモデル名）を確認してください。",
     });
   }
 }
