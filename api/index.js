@@ -1,6 +1,6 @@
-const { Client, middleware } = require('@line/bot-sdk');
-const { OpenAI } = require('openai');
-const express = require('express');
+import { Client } from '@line/bot-sdk';
+import OpenAI from 'openai';
+import express from 'express';
 
 const config = {
   channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
@@ -11,13 +11,16 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const client = new Client(config);
 const app = express();
 
-app.post('/api/webhook', middleware(config), (req, res) => {
-  Promise.all(req.body.events.map(handleEvent))
-    .then((result) => res.json(result))
-    .catch((err) => {
-      console.error(err);
-      res.status(500).end();
-    });
+// LINEからのメッセージを受け取る設定
+app.post('/api/webhook', express.json(), async (req, res) => {
+  const events = req.body.events;
+  try {
+    const result = await Promise.all(events.map(handleEvent));
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).end();
+  }
 });
 
 async function handleEvent(event) {
@@ -43,15 +46,26 @@ ${userMessage}
 ※共感・リアル感・時短・お得を重視し、スマホで読みやすく改行してください。
 `;
 
-  const completion = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo",
-    messages: [{ role: "system", content: "楽天ROOM専門のセールスライターです。" }, { role: "user", content: prompt }],
-  });
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        { role: "system", content: "楽天ROOM専門のセールスライターです。" },
+        { role: "user", content: prompt }
+      ],
+    });
 
-  return client.replyMessage(event.replyToken, {
-    type: 'text',
-    text: completion.choices[0].message.content,
-  });
+    return client.replyMessage(event.replyToken, {
+      type: 'text',
+      text: completion.choices[0].message.content,
+    });
+  } catch (error) {
+    console.error("OpenAI Error:", error);
+    return client.replyMessage(event.replyToken, {
+      type: 'text',
+      text: "ごめんなさい、添削中にエラーが発生しました。設定を確認してください。",
+    });
+  }
 }
 
-module.exports = app;
+export default app;
