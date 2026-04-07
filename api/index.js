@@ -59,7 +59,8 @@ ${userText}
 ②改善点：
 ③プロのリライト案：
 ④目を引くタイトル案：
-⑤一言アドバイス：`;
+⑤一言アドバイス：`
+※回答全体は1500文字以内に収めてください。`;
 
     const replyText = await generateWithRetry(prompt);
 
