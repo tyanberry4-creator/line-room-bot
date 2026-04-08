@@ -80,33 +80,28 @@ ${userText}
 
 function getSuggestionPrompt(target, theme) {
   const today = new Date().toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' });
-  return `あなたは楽天アフィリエイトと楽天ROOMのプロです。
+  return `以下の条件でターゲットに刺さる楽天の売れ筋商品を3つ提案してください。
 今日は${today}です。
-
-以下の条件でターゲットに刺さる楽天の売れ筋商品を提案してください。
 
 【ターゲット】${target}
 【テーマ・季節】${theme === 'おまかせ' ? '今の季節や直近のイベントに合わせておまかせ' : theme}
 
-以下の形式で3商品提案してください。回答全体は1500文字以内にしてください。
+回答は以下の形式のみで返してください。前置きや説明は不要です。回答全体は1200文字以内にしてください。
 
 【商品①】
 ・商品ジャンル：
 ・おすすめ理由：
-・Threads用の一文目サンプル：
-・Instagram用の冒頭3行サンプル：
+・URLへ誘導する一言（インパクト重視・短め）：
 
 【商品②】
 ・商品ジャンル：
 ・おすすめ理由：
-・Threads用の一文目サンプル：
-・Instagram用の冒頭3行サンプル：
+・URLへ誘導する一言（インパクト重視・短め）：
 
 【商品③】
 ・商品ジャンル：
 ・おすすめ理由：
-・Threads用の一文目サンプル：
-・Instagram用の冒頭3行サンプル：`;
+・URLへ誘導する一言（インパクト重視・短め）：`;
 }
 
 function showMenu() {
@@ -157,10 +152,13 @@ async function handleEvent(event) {
 
     // 投稿文の添削待ち
     if (state.step === 'waiting_post') {
+      await client.replyMessage(event.replyToken, {
+        type: 'text', text: '少々お待ちください✏️\n添削しています...',
+      });
       const prompt = getEditPrompt(state.mode, userText);
       const replyText = await generateWithRetry(prompt);
       userState[userId] = { step: 'menu' };
-      return client.replyMessage(event.replyToken, {
+      return client.pushMessage(userId, {
         type: 'text', text: replyText + '\n\n続けるには「メニュー」と送ってください。',
       });
     }
@@ -175,10 +173,13 @@ async function handleEvent(event) {
 
     // 商品提案：テーマ待ち
     if (state.step === 'waiting_theme') {
+      await client.replyMessage(event.replyToken, {
+        type: 'text', text: '少々お待ちください🔍\n商品を考えています...',
+      });
       const prompt = getSuggestionPrompt(state.target, userText);
       const replyText = await generateWithRetry(prompt);
       userState[userId] = { step: 'menu' };
-      return client.replyMessage(event.replyToken, {
+      return client.pushMessage(userId, {
         type: 'text', text: replyText + '\n\n続けるには「メニュー」と送ってください。',
       });
     }
