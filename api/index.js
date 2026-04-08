@@ -14,7 +14,6 @@ const app = express();
 
 app.use(express.json());
 
-// 会話状態を一時保存
 const userState = {};
 
 app.post('*', async (req, res) => {
@@ -116,7 +115,6 @@ async function handleEvent(event) {
   const state = userState[userId] || { step: 'menu' };
 
   try {
-    // メニューに戻る
     if (userText === 'メニュー' || userText === 'menu' || userText === '0') {
       userState[userId] = { step: 'menu' };
       return client.replyMessage(event.replyToken, {
@@ -124,7 +122,6 @@ async function handleEvent(event) {
       });
     }
 
-    // メニュー選択
     if (state.step === 'menu' || state.step === undefined) {
       if (userText === '1') {
         userState[userId] = { step: 'waiting_post', mode: 'threads' };
@@ -144,13 +141,11 @@ async function handleEvent(event) {
           type: 'text', text: '商品提案モードです！\n\nまず教えてください。\nあなたのフォロワー層はどんな方が多いですか？\n\n例：20代女性・育児中のママ・40代主婦・美容好きな女性など',
         });
       }
-      // 番号以外が来たらメニューを表示
       return client.replyMessage(event.replyToken, {
         type: 'text', text: showMenu(),
       });
     }
 
-    // 投稿文の添削待ち
     if (state.step === 'waiting_post') {
       await client.replyMessage(event.replyToken, {
         type: 'text', text: '少々お待ちください✏️\n添削しています...',
@@ -163,7 +158,6 @@ async function handleEvent(event) {
       });
     }
 
-    // 商品提案：ターゲット待ち
     if (state.step === 'waiting_target') {
       userState[userId] = { step: 'waiting_theme', target: userText };
       return client.replyMessage(event.replyToken, {
@@ -171,7 +165,6 @@ async function handleEvent(event) {
       });
     }
 
-    // 商品提案：テーマ待ち
     if (state.step === 'waiting_theme') {
       await client.replyMessage(event.replyToken, {
         type: 'text', text: '少々お待ちください🔍\n商品を考えています...',
@@ -183,15 +176,14 @@ async function handleEvent(event) {
         type: 'text', text: replyText + '\n\n続けるには「メニュー」と送ってください。',
       });
     }
-} catch (error) {
+
+  } catch (error) {
     console.error("Gemini Error:", error);
     let errorMessage = "申し訳ありません。AIとの通信でエラーが発生しました。\n少し時間をおいて再度お試しください。";
     if (error.status === 503) {
       errorMessage = "ただいまAIが混み合っています。\n少し時間をおいて再度お試しください🙏";
     }
     userState[userId] = { step: 'menu' };
-
-    // replyTokenで送れない場合はpushMessageにフォールバック
     try {
       return await client.replyMessage(event.replyToken, {
         type: 'text', text: errorMessage,
@@ -202,5 +194,6 @@ async function handleEvent(event) {
       });
     }
   }
+}
 
 module.exports = app;
