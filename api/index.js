@@ -30,7 +30,7 @@ app.post('*', async (req, res) => {
   }
 });
 
-async function generateWithRetry(prompt, maxRetries = 3) {
+async function generateWithRetry(prompt, maxRetries = 5) {
   for (let i = 0; i < maxRetries; i++) {
     try {
       const result = await model.generateContent(prompt);
@@ -38,7 +38,7 @@ async function generateWithRetry(prompt, maxRetries = 3) {
     } catch (error) {
       const isRetryable = error.status === 503 || error.status === 429;
       if (isRetryable && i < maxRetries - 1) {
-        const waitMs = (i + 1) * 2000;
+        const waitMs = (i + 1) * 3000;
         await new Promise(res => setTimeout(res, waitMs));
       } else {
         throw error;
