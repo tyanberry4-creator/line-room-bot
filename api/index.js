@@ -183,18 +183,24 @@ async function handleEvent(event) {
         type: 'text', text: replyText + '\n\n続けるには「メニュー」と送ってください。',
       });
     }
-
-  } catch (error) {
+} catch (error) {
     console.error("Gemini Error:", error);
-    let errorMessage = "申し訳ありません。AIとの通信でエラーが発生しました。";
+    let errorMessage = "申し訳ありません。AIとの通信でエラーが発生しました。\n少し時間をおいて再度お試しください。";
     if (error.status === 503) {
-      errorMessage = "ただいまAIが混み合っています。少し時間をおいて再度お試しください。";
+      errorMessage = "ただいまAIが混み合っています。\n少し時間をおいて再度お試しください🙏";
     }
     userState[userId] = { step: 'menu' };
-    return client.replyMessage(event.replyToken, {
-      type: 'text', text: errorMessage,
-    });
+
+    // replyTokenで送れない場合はpushMessageにフォールバック
+    try {
+      return await client.replyMessage(event.replyToken, {
+        type: 'text', text: errorMessage,
+      });
+    } catch (replyError) {
+      return await client.pushMessage(userId, {
+        type: 'text', text: errorMessage,
+      });
+    }
   }
-}
 
 export default app;
