@@ -1,6 +1,6 @@
-import { Client } from '@line/bot-sdk';
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import express from 'express';
+const { Client } = require('@line/bot-sdk');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const express = require('express');
 
 const config = {
   channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
