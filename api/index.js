@@ -203,4 +203,4 @@ async function handleEvent(event) {
     }
   }
 
-export default app;
+module.exports = app;
