@@ -1,5 +1,5 @@
 const { Client } = require('@line/bot-sdk');
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const Groq = require('groq-sdk');
 const express = require('express');
 
 const config = {
@@ -7,8 +7,7 @@ const config = {
   channelSecret: process.env.LINE_CHANNEL_SECRET,
 };
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const client = new Client(config);
 const app = express();
 
@@ -33,8 +32,11 @@ app.post('*', async (req, res) => {
 async function generateWithRetry(prompt, maxRetries = 5) {
   for (let i = 0; i < maxRetries; i++) {
     try {
-      const result = await model.generateContent(prompt);
-      return result.response.text();
+      const completion = await groq.chat.completions.create({
+        messages: [{ role: 'user', content: prompt }],
+        model: 'llama-3.3-70b-versatile',
+      });
+      return completion.choices[0].message.content;
     } catch (error) {
       const isRetryable = error.status === 503 || error.status === 429;
       if (isRetryable && i < maxRetries - 1) {
@@ -237,7 +239,7 @@ async function handleEvent(event) {
     }
 
   } catch (error) {
-    console.error("Gemini Error:", error);
+    console.error("Groq Error:", error);
     let errorMessage = "申し訳ありません。AIとの通信でエラーが発生しました。\n少し時間をおいて再度お試しください。";
     if (error.status === 503) {
       errorMessage = "ただいまAIが混み合っています。\n少し時間をおいて再度お試しください🙏";
